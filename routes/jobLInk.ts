@@ -4,7 +4,7 @@ import JobLink from "../Model/JobLink";
 import jobLinkAddValidation from "../validation/jobLinkAddValidation";
 import { validationResult } from "express-validator";
 import User from "../Model/User";
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 import * as _ from "lodash";
 
 const router = Router();
@@ -20,6 +20,8 @@ const getAllJobLinks = (req: Request, res: Response) => {
 };
 
 const addJobLink = (req: Request, res: Response) => {
+  // console.log("ADD JOB LINK API", req.body);
+
   let { errors }: any = validationResult(req);
 
   if (!_.isEmpty(errors)) {
@@ -48,39 +50,45 @@ const addJobLink = (req: Request, res: Response) => {
               // update
               if (jobLink) {
                 // Check if arr includes object b using lodash's isEqual function
-                let applied = jobLink.linker.some((item) => {
-                  return _.isEqual(JSON.stringify(item), JSON.stringify(user));
-                });
+                // let applied = jobLink.linker.some((item) => {
+                //   return _.isEqual(JSON.stringify(item), JSON.stringify(user));
+                // });
 
-                if (applied) {
+                if (jobLink.applied) {
                   res.json({
                     success: false,
-                    error: "You have already allied for this job",
+                    message: "You have already allied for this job",
                   });
                 }
                 //
                 else {
                   jobLink.linker.push(user);
+                  jobLink.applied = true;
                   jobLink
                     .save()
                     .then((saved) => {
                       res.json({
                         success: true,
                         saved,
+                        message: "Job Updated!",
                       });
                     })
                     .catch((err) => {
-                      console.log(err);
+                      // console.log(err);
                       res.json({
                         success: false,
-                        error: "Server Error",
+                        message: "Server Error",
                       });
                     });
                 }
               }
               // add
               else {
-                let newJobLink = new JobLink({ link, linker: [user] });
+                let newJobLink = new JobLink({
+                  link,
+                  linker: [user],
+                  applied: true,
+                });
                 newJobLink
                   .save()
                   .then((saved) => {
@@ -90,19 +98,19 @@ const addJobLink = (req: Request, res: Response) => {
                     });
                   })
                   .catch((err) => {
-                    console.log(err);
+                    // console.log(err);
                     res.json({
                       success: false,
-                      msg: "Server error",
+                      message: "Server error",
                     });
                   });
               }
             })
             .catch((err) => {
-              console.log(err);
+              // console.log(err);
               res.json({
                 success: false,
-                msg: "Server error",
+                message: "Server error",
               });
             });
         }
@@ -111,7 +119,7 @@ const addJobLink = (req: Request, res: Response) => {
         console.log(err);
         res.json({
           success: false,
-          msg: "Server Error",
+          message: "Server Error",
         });
       });
   }
@@ -119,6 +127,7 @@ const addJobLink = (req: Request, res: Response) => {
 
 const removeJobLink = (req: Request, res: Response) => {
   let { errors }: any = validationResult(req);
+  console.log("Remove job Link API", req.body);
 
   if (!_.isEmpty(errors)) {
     res.json({
@@ -128,78 +137,81 @@ const removeJobLink = (req: Request, res: Response) => {
   }
   //
   else {
-    let { link, userId } = req.body;
+    let { link, userId, email } = req.body;
 
-    User.findById(userId)
+    User.findOne({ email })
       .then((user) => {
         if (!user) {
+          console.log("User does not exist!");
           res.json({
             success: false,
-            error: "You Have to Register!",
+            message: "You Have to Register!",
           });
         }
         // if user is valid
         else {
           JobLink.findOne({ link })
             .then((jobLink) => {
+              // remove
               if (jobLink) {
-                if (jobLink.linker.includes(userId)) {
-                  jobLink.linker.splice(jobLink.linker.indexOf(userId), 1);
+                if (jobLink.applied) {
+                  let linker = [...jobLink.linker];
+                  let [removed] = _.remove(linker, {
+                    _id: new Types.ObjectId(userId),
+                    email,
+                  });
+
+                  console.log("Removed : ", removed);
+                  jobLink.linker = [...linker];
+                  jobLink.applied = false;
                   jobLink
                     .save()
-                    .then((saved) => {
+                    .then((removed) => {
                       res.json({
                         success: true,
-                        saved,
+                        removed,
+                        message: "removed successfully",
                       });
+                      // console.log("Removed!", removed);
                     })
                     .catch((err) => {
-                      console.log(err);
+                      // console.log(err);
                       res.json({
                         success: false,
-                        error: "Server Error",
+                        message: "Server Error",
                       });
                     });
-                } else {
+                }
+                //
+                else {
                   res.json({
                     success: false,
-                    error: "You have not applied for this job yet.",
+                    message: "You have not applied for this job yet.",
                   });
                 }
               }
-              // add
+              //
               else {
-                new JobLink({ link, linker: [userId] })
-                  .save()
-                  .then((saved) => {
-                    return {
-                      success: true,
-                      saved,
-                    };
-                  })
-                  .catch((err) => {
-                    console.log(err);
-                    res.json({
-                      success: false,
-                      msg: "Server error",
-                    });
-                  });
+                res.json({
+                  success: false,
+                  message: "Link does not exist!",
+                });
               }
             })
             .catch((err) => {
-              console.log(err);
+              // console.log(err);
               res.json({
                 success: false,
-                msg: "Server error",
+                message: "Server error",
               });
             });
         }
       })
       .catch((err) => {
-        console.log(err);
+        // console.log(err);
         res.json({
           success: false,
-          msg: "Server Error",
+          message: "Server Error",
         });
       });
   }
@@ -209,6 +221,6 @@ router.get("/", getAllJobLinks);
 
 router.post("/add", jobLinkAddValidation, addJobLink);
 
-router.get("/delete", jobLinkAddValidation, removeJobLink);
+router.post("/delete", jobLinkAddValidation, removeJobLink);
 
 export default router;

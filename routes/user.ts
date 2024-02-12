@@ -9,10 +9,9 @@ import passport = require("passport");
 const router = Router();
 
 const userLogin = (req: Request, res: Response) => {
-
   console.log("User Login Api");
 
-  console.log(req.body)
+  console.log(req.body);
 
   let { errors }: any = validationResult(req);
 
@@ -20,7 +19,7 @@ const userLogin = (req: Request, res: Response) => {
   if (!_.isEmpty(errors)) {
     res.json({
       success: false,
-      errors : errors.map(err => err.msg)
+      errors: errors.map((err) => err.msg),
     });
   } else {
     let { email } = req.body;
@@ -48,7 +47,6 @@ const userLogin = (req: Request, res: Response) => {
   }
 };
 
-
 const userRegister = (req: Request, res: Response) => {
   console.log("User Register Api");
 
@@ -72,13 +70,13 @@ const userRegister = (req: Request, res: Response) => {
       }
       //
       else {
-        new User(req.body).save().then(user =>{
+        new User(req.body).save().then((user) => {
           res.json({
-            success : true,
+            success: true,
             user,
-            message : "Register Success!"
-          })
-        })
+            message: "Register Success!",
+          });
+        });
       }
     });
   }
@@ -92,7 +90,6 @@ const test = (req: Request, res: Response) => {
 // route : /api/user/login
 // user login
 router.post("/login", userLoginValidation, userLogin);
-
 
 // @ public
 // route : /api/user/register

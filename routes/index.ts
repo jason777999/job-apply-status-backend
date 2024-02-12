@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import user from "./user";
 import jobLink from "./jobLInk";
+import note from "./note";
 import * as passport from "passport";
 
 const router: Router = Router();
@@ -23,5 +24,6 @@ router.get(
 
 router.use("/user", user);
 router.use("/job-link", jobLink);
+router.use("/note", note);
 
 export default router;
