@@ -62,9 +62,29 @@ const addNote = (req: Request, res: Response) => {
       });
   }
 };
+const deleteNote = (req: Request, res: Response) => {
+  console.log("Delete NOTE API", req.params);
+
+  Note.findByIdAndDelete(new Types.ObjectId(req.params.noteId)).then((note) => {
+    if (!note) {
+      res.json({
+        success: false,
+        message: "Note note found",
+      });
+    } else {
+      res.json({
+        success: true,
+        message: "Removed Successaly",
+        removed: note,
+      });
+    }
+  });
+};
 
 router.get("/", getAllNotes);
 
 router.post("/add", noteAddValidation, addNote);
+
+router.get("/delete/:noteId", deleteNote);
 
 export default router;
