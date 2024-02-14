@@ -10,13 +10,15 @@ import * as _ from "lodash";
 const router = Router();
 
 const getAllJobLinks = (req: Request, res: Response) => {
-  JobLink.find().then((jobLinks) => {
-    res.json({
-      success: true,
-      jobList: jobLinks,
-      message: "Fetched success",
+  JobLink.find()
+    .sort({ date: -1 })
+    .then((jobLinks) => {
+      res.json({
+        success: true,
+        jobList: jobLinks,
+        message: "Fetched success",
+      });
     });
-  });
 };
 
 const addJobLink = (req: Request, res: Response) => {

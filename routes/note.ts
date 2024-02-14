@@ -10,13 +10,27 @@ import noteAddValidation from "../validation/noteAddValidation";
 const router = Router();
 
 const getAllNotes = (req: Request, res: Response) => {
-  Note.find().then((notes) => {
-    res.json({
-      success: true,
-      notes,
-      message: "Fetched success",
+  let { searchKeyword } = req.body;
+
+  searchKeyword = searchKeyword === undefined ? "" : searchKeyword;
+
+  console.log("Fetch All Note Api", searchKeyword);
+
+  Note.find({
+    $or: [
+      { text: { $regex: new RegExp(searchKeyword, "i") } }, // Case-insensitive partial match for text field
+      { "writer.email": { $regex: new RegExp(searchKeyword, "i") } }, // Case-insensitive partial match for writer.email field
+    ],
+  })
+    .sort({ date: -1, text: 1 })
+    .then((notes) => {
+      res.json({
+        success: true,
+        notes,
+        message: "Fetched success",
+        searchKeyword,
+      });
     });
-  });
 };
 
 const addNote = (req: Request, res: Response) => {
@@ -81,7 +95,7 @@ const deleteNote = (req: Request, res: Response) => {
   });
 };
 
-router.get("/", getAllNotes);
+router.post("/", getAllNotes);
 
 router.post("/add", noteAddValidation, addNote);
 

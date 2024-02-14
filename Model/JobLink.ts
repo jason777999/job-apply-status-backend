@@ -13,4 +13,5 @@ const JobLink = new Schema({
   },
 });
 
+JobLink.index({ "$**": "text" });
 export default model("job-link", JobLink);
